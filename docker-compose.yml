@@ -1,0 +1,52 @@
+services:
+  mariadb-dev:
+    image: mariadb:latest
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: my-secret-pw
+      MARIADB_DATABASE: masolutionformation
+      MARIADB_USER: wp_user
+      MARIADB_PASSWORD: wp_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb-volume:/var/lib/mysql
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pmy-secret-pw"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  phpmyadmin-dev:
+    image: phpmyadmin:latest
+    restart: unless-stopped
+    environment:
+      PMA_HOST: mariadb-dev
+    depends_on:
+      - mariadb-dev
+    ports:
+      - "8989:80"
+    networks:
+      - backend
+  wordpress-dev:
+    image: wordpress
+    environment:
+      WORDPRESS_DB_HOST: mariadb-dev
+      WORDPRESS_DB_USER: wp_user
+      WORDPRESS_DB_PASSWORD: wp_password
+      WORDPRESS_DB_NAME: masolutionformation
+      WORDPRESS_TABLE_PREFIX: wp_
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+    networks:
+      - backend
+    depends_on:
+      - mariadb-dev
+volumes:
+  mariadb-volume:
+
+networks:
+  backend:
